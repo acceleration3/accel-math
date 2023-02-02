@@ -1,6 +1,7 @@
-#include <cassert>
-
 #include <iostream>
+#include <type_traits>
+
+#include <cassert>
 
 #include <accel/math.hpp>
 

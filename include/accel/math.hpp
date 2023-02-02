@@ -182,10 +182,10 @@ namespace accel
 		// Accessors
 		constexpr const T& width() const { return m_data[0]; }
 		constexpr T& width() { return m_data[0]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr const T& height() const { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr T& height() { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr const T& depth() const { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr T& depth() { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr const T& height() const { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr T& height() { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr const T& depth() const { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr T& depth() { return m_data[2]; }
 
 		// Operators
 		constexpr bool operator==(const size& other) const { return m_data == other.m_data; }
@@ -263,10 +263,10 @@ namespace accel
 		// Accessors
 		constexpr const T& x() const { return m_data[0]; }
 		constexpr T& x() { return m_data[0]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr const T& y() const { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr T& y() { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr const T& z() const { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr T& z() { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<(Dimensions >= 2), U>> constexpr const T& y() const { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<(Dimensions >= 2), U>> constexpr T& y() { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<(Dimensions >= 3), U>> constexpr const T& z() const { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<(Dimensions >= 3), U>> constexpr T& z() { return m_data[2]; }
 
 		// Methods
 		constexpr vector<Dimensions, T> vector_to(const point& other) const { return (*this - other).operator accel::vector<Dimensions, T>(); }
@@ -425,20 +425,20 @@ namespace accel
 		using iterator = typename storage_type::iterator;
 		using const_iterator = typename storage_type::const_iterator;
 
-		template<typename = typename std::enable_if_t<Rows == Columns>> constexpr static matrix identity();
-		template<typename = typename std::enable_if_t<Rows == 3 && Columns == 3>> constexpr static matrix translate(const vector<2,T>& position);
-		template<typename = typename std::enable_if_t<Rows == 3 && Columns == 3>> constexpr static matrix scale(const size<2, T>& value);
-		template<typename = typename std::enable_if_t<Rows == 3 && Columns == 3>> constexpr static matrix rotate(const angle<T>& value);
-		template<typename = typename std::enable_if_t<Rows == 3 && Columns == 3>> constexpr static matrix shear(const vector<2, T>& value);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix translate(const vector<3, T>& position);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix scale(const vector<3, T>& position);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix rotate_x(const angle<T>& value);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix rotate_y(const angle<T>& value);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix rotate_z(const angle<T>& value);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix perspective(const angle<T>& horizontal_fov, T aspect_ratio, T near_z, T far_z);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix perspective_v(const angle<T>& vertical_fov, T aspect_ratio, T near_z, T far_z);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix lookat(const point<3, T>& target, const point<3, T>& at, const vector<3, T>& up);
-		template<typename = typename std::enable_if_t<Rows == 4 && Columns == 4>> constexpr static matrix orthographic(const rectangle<T>& rect, T z_near, T z_far);
+		template<typename U = T, typename = std::enable_if_t<Rows == Columns, U>> constexpr static matrix identity();
+		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix translate(const vector<2, T>& position);
+		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix scale(const size<2, T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix rotate(const angle<T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix shear(const vector<2, T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix translate(const vector<3, T>& position);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix scale(const vector<3, T>& position);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_x(const angle<T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_y(const angle<T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_z(const angle<T>& value);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix perspective(const angle<T>& horizontal_fov, T aspect_ratio, T near_z, T far_z);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix perspective_v(const angle<T>& vertical_fov, T aspect_ratio, T near_z, T far_z);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix lookat(const point<3, T>& target, const point<3, T>& at, const vector<3, T>& up);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix orthographic(const rectangle<T>& rect, T z_near, T z_far);
 
 		constexpr static std::size_t rows();
 		constexpr static std::size_t columns();
@@ -484,7 +484,7 @@ namespace accel
 		constexpr T& operator()(std::size_t index);
 
 		template <typename T1>
-		friend std::ostream& operator<< <>(std::ostream& stream, const matrix& m);
+		friend std::ostream& operator<<(std::ostream& stream, const matrix& m);
 
 	protected:
 		storage_type m_data;
@@ -577,22 +577,22 @@ namespace accel
 		// X Y Z W accessors
 		constexpr const T& x() const { return m_data[0]; }
 		constexpr T& x() { return m_data[0]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr const T& y() const { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr T& y() { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr const T& z() const { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr T& z() { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 4>> constexpr const T& w() const { return m_data[3]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 4>> constexpr T& w() { return m_data[3]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr const T& y() const { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr T& y() { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr const T& z() const { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr T& z() { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 4, U>> constexpr const T& w() const { return m_data[3]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 4, U>> constexpr T& w() { return m_data[3]; }
 
 		// R G B A accessors
 		constexpr const T& r() const { return m_data[0]; }
 		constexpr T& r() { return m_data[0]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr const T& g() const { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 2>> constexpr T& g() { return m_data[1]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr const T& b() const { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 3>> constexpr T& b() { return m_data[2]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 4>> constexpr const T& a() const { return m_data[3]; }
-		template<typename = typename std::enable_if_t<Dimensions >= 4>> constexpr T& a() { return m_data[3]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr const T& g() const { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 2, U>> constexpr T& g() { return m_data[1]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr const T& b() const { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 3, U>> constexpr T& b() { return m_data[2]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 4, U>> constexpr const T& a() const { return m_data[3]; }
+		template<typename U = T, typename = std::enable_if_t<Dimensions >= 4, U>> constexpr T& a() { return m_data[3]; }
 
 		// Equality operators
 		constexpr bool operator==(const vector& other) const { return m_data == other.m_data; }
@@ -602,11 +602,11 @@ namespace accel
 		constexpr vector operator+(const vector& other) const { return sum(other.m_data, std::make_index_sequence<Dimensions>{}); }
 		constexpr vector operator-(const vector& other) const { return difference(other.m_data, std::make_index_sequence<Dimensions>{}); }
 		constexpr T operator*(const vector& other) const { return dot(other.m_data, std::make_index_sequence<Dimensions>{}); }
-		template<typename = typename std::enable_if_t<Dimensions == 2>> constexpr T operator^(const vector& other) const 
+		template<typename U = T, typename = typename std::enable_if_t<Dimensions == 2, U>> constexpr U operator^(const vector& other) const 
 		{ 
 			return (x() * other.y()) - (y() * other.x()); 
 		}
-		template<typename = typename std::enable_if_t<Dimensions == 3>> constexpr vector operator^(const vector& other) const 
+		template<typename U = T, typename = typename std::enable_if_t<Dimensions == 3, U>> constexpr vector operator^(const vector& other) const 
 		{ 
 			return vector(
 				y() * other.z() - z() * other.y(),
@@ -683,7 +683,7 @@ namespace accel
 	using colorf_rgba = vector4f;
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::identity()
 	{
 		matrix temp;
@@ -693,7 +693,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>	
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::translate(const vector<2, T>& position)
 	{
 		return matrix(
@@ -704,7 +704,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::scale(const accel::size<2, T>& value)
 	{
 		return matrix(
@@ -715,7 +715,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::rotate(const angle<T>& value)
 	{
 		return matrix(
@@ -726,7 +726,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::shear(const vector<2, T>& value)
 	{
 		return matrix(
@@ -737,7 +737,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::translate(const vector<3, T>& position)
 	{
 		return matrix(
@@ -749,7 +749,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::scale(const vector<3, T>& position)
 	{
 		return matrix(
@@ -761,7 +761,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::rotate_x(const angle<T>& value)
 	{
 		return matrix(
@@ -773,7 +773,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::rotate_y(const angle<T>& value)
 	{
 		return matrix(
@@ -785,7 +785,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::rotate_z(const angle<T>& value)
 	{
 		return matrix(
@@ -797,7 +797,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::perspective(const angle<T>& horizontal_fov, T aspect_ratio, T near_z, T far_z)
 	{
 		auto vertical_fov = angle<T>::atan((horizontal_fov / T(2)).tan() / aspect_ratio) * T(2);
@@ -805,7 +805,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::perspective_v(const angle<T>& vertical_fov, T aspect_ratio, T near_z, T far_z)
 	{
 		T tan_half_angle = (vertical_fov / T(2)).tan();
@@ -819,7 +819,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::lookat(const point<3, T>& target, const point<3, T>& at, const vector<3, T>& up)
 	{
 		vector<3, T> z_axis = target.vector_to(at).normalized();
@@ -835,7 +835,7 @@ namespace accel
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	template<typename>
+	template<typename, typename>
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::orthographic(const rectangle<T>& rect, T z_near, T z_far)
 	{
 		return matrix(

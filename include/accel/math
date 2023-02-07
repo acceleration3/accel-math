@@ -1,5 +1,5 @@
-#ifndef ACCEL_MATH_H
-#define ACCEL_MATH_H
+#ifndef ACCEL_MATH_HEADER
+#define ACCEL_MATH_HEADER
 
 #include <cstddef>
 #include <cmath>

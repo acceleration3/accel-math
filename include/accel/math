@@ -163,7 +163,7 @@ namespace accel
 		using const_iterator = typename storage_type::const_iterator;
 
 		template<typename... Ts>
-		constexpr size(Ts... values) : m_data{ values... } {}
+		constexpr size(Ts... values) : m_data{ static_cast<T>(values)... } {}
 
 		// Copyable
 		constexpr size(const size&) = default;
@@ -420,7 +420,7 @@ namespace accel
 	class matrix
 	{
 	public:
-		using storage_type = std::array<std::array<T, Columns>, Rows>;
+		using storage_type = std::array<T, Columns * Rows>;
 		using value_type = T;
 		using iterator = typename storage_type::iterator;
 		using const_iterator = typename storage_type::const_iterator;
@@ -431,7 +431,7 @@ namespace accel
 		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix rotate(const angle<T>& value);
 		template<typename U = T, typename = std::enable_if_t<Rows == 3 && Columns == 3, U>> constexpr static matrix shear(const vector<2, T>& value);
 		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix translate(const vector<3, T>& position);
-		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix scale(const vector<3, T>& position);
+		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix scale(const size<3, T>& position);
 		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_x(const angle<T>& value);
 		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_y(const angle<T>& value);
 		template<typename U = T, typename = std::enable_if_t<Rows == 4 && Columns == 4, U>> constexpr static matrix rotate_z(const angle<T>& value);
@@ -465,11 +465,17 @@ namespace accel
 		constexpr vector<Columns, T> row(std::size_t index) const;
 		constexpr vector<Rows, T> column(std::size_t index) const;
 		constexpr matrix transposed() const;
+		constexpr T determinant() const;
+		constexpr matrix<Rows - 1, Columns - 1, T> cofactor(std::size_t row, std::size_t col) const;
+		constexpr matrix<Columns, Rows, T> inverse() const;
 
 		constexpr bool operator==(const matrix& other) const;
 		constexpr bool operator!=(const matrix& other) const;
 
 		template<std::size_t N> constexpr matrix<Rows, N, T> operator*(const matrix<Columns, N, T>& other) const;
+		constexpr vector<Rows, T> operator*(const vector<Columns, T>& v) const;
+		
+		constexpr matrix operator/(T scalar) const;
 
 		constexpr const T& at(std::size_t row, std::size_t column) const;
 		constexpr T& at(std::size_t row, std::size_t column);
@@ -509,7 +515,11 @@ namespace accel
 		using iterator = typename storage_type::iterator;
 		using const_iterator = typename storage_type::const_iterator;
 
-		template<typename... Ts> constexpr vector(Ts... values) : m_data{ static_cast<T>(values)... } {}
+		constexpr vector() : m_data{T(0)} {}
+
+		template<typename... Ts, typename = typename std::enable_if<(sizeof...(Ts) == Dimensions && (std::is_convertible<Ts, T>::value && ...)), void>::type>
+		constexpr vector(Ts&&... values) : m_data{ std::forward<Ts>(values)... } {}
+
 		constexpr vector(const T& value) { m_data.fill(value); }
 		constexpr vector(const vector<Dimensions - 1, T>& other, T value)
 		{
@@ -558,7 +568,9 @@ namespace accel
 		}
 
 		constexpr angle<T, details::radians_trait> angle(const vector& other) { return accel::angle<T>::acos(this->operator*(other) / std::sqrt(length_squared() * other.length_squared())); }
-		template<typename... Ts> constexpr vector<sizeof...(Ts), T> swizzle() const
+		
+		template<typename... Ts> 
+		constexpr vector<sizeof...(Ts), T> swizzle() const
 		{
 			return { ([&]()
 			{
@@ -636,16 +648,28 @@ namespace accel
 		template<typename ScalarT> constexpr vector operator*(const ScalarT& value) const { return product(value, std::make_index_sequence<Dimensions>{}); }
 		template<typename ScalarT> constexpr vector operator/(const ScalarT& value) const { return quotient(value, std::make_index_sequence<Dimensions>{}); }
 
+		constexpr vector operator-()
+		{
+			vector negative_vector(*this);
+			for (std::size_t i = 0; i < Dimensions; i++)
+				negative_vector[i] = -negative_vector[i];
+			return negative_vector;
+		}
+
 		// Matrix multiplication
 		template<std::size_t Rows> 
-		constexpr vector operator*(const matrix<Rows, Dimensions, T>& matrix) const
+		vector<Dimensions, T> operator*(const matrix<Rows, Dimensions, T>& m) const 
 		{
-			vector result;
-			for (std::size_t row = 0; row < Rows; row++)
+			vector<Dimensions, T> result;
+
+			for (std::size_t i = 0; i < Dimensions; i++) 
 			{
-				for (std::size_t column = 0; column < Dimensions; column++)
-					result[row] = result[row] + (m_data[column] * matrix(row, column));
+				T sum = 0;
+				for (std::size_t j = 0; j < Rows; j++) 
+					sum += m(i, j) * m_data[j];
+				result[i] = sum;
 			}
+
 			return result;
 		}
 
@@ -708,8 +732,8 @@ namespace accel
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::scale(const accel::size<2, T>& value)
 	{
 		return matrix(
-			value.x(), 0.0f, 0.0f,
-			0.0f, value.y(), 0.0f,
+			value.width(), 0.0f, 0.0f,
+			0.0f, value.height(), 0.0f,
 			0.0f, 0.0f, 1.0f
 		);
 	}
@@ -741,21 +765,21 @@ namespace accel
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::translate(const vector<3, T>& position)
 	{
 		return matrix(
-			1.0f, 0.0f, 0.0f, position.x(),
-			0.0f, 1.0f, 0.0f, position.y(),
-			0.0f, 0.0f, 1.0f, position.z(),
-			0.0f, 0.0f, 0.0f, 1.0f
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			position.x(), position.y(), position.z(), 1.0f
 		);
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
 	template<typename, typename>
-	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::scale(const vector<3, T>& position)
+	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::scale(const accel::size<3, T>& scale)
 	{
 		return matrix(
-			position.x(), 0.0f, 0.0f, 0.0f,
-			0.0f, position.y(), 0.0f, 0.0f,
-			0.0f, 0.0f, position.z(), 0.0f,
+			scale.width(), 0.0f, 0.0f, 0.0f,
+			0.0f, scale.height(), 0.0f, 0.0f,
+			0.0f, 0.0f, scale.depth(), 0.0f,
 			0.0f, 0.0f, 0.0f, 1.0f
 		);
 	}
@@ -813,8 +837,8 @@ namespace accel
 		return matrix(
 			T(1) / (aspect_ratio * tan_half_angle), 0, 0, 0,
 			0, T(1) / tan_half_angle, 0, 0,
-			0, 0, (far_z + near_z) / negative_range, (T(2) * far_z * near_z) / negative_range,
-			0, 0, -1, 0
+			0, 0, (far_z + near_z) / negative_range, -1,
+			0, 0, (T(2) * far_z * near_z) / negative_range, 0
 		);
 	}
 
@@ -827,10 +851,10 @@ namespace accel
 		vector<3, T> y_axis = z_axis ^ x_axis;
 		const vector<3, T>& target_vector = target;
 		return matrix(
-			x_axis.x(), x_axis.y(), x_axis.z(), -(x_axis * target_vector),
-			y_axis.x(), y_axis.y(), y_axis.z(), -(y_axis * target_vector),
-			z_axis.x(), z_axis.y(), z_axis.z(), -(z_axis * target_vector),
-			0, 0, 0, 1
+			x_axis.x(), x_axis.y(), x_axis.z(), 0,
+			y_axis.x(), y_axis.y(), y_axis.z(), 0,
+			z_axis.x(), z_axis.y(), z_axis.z(), 0,
+			-(x_axis * target_vector), -(y_axis * target_vector), -(z_axis * target_vector), 1
 		);
 	}
 
@@ -839,10 +863,10 @@ namespace accel
 	inline constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::orthographic(const rectangle<T>& rect, T z_near, T z_far)
 	{
 		return matrix(
-			T(2) / (rect.right() - rect.left()), 0, 0, -((rect.right() + rect.left()) / (rect.right() - rect.left())),
-			0, T(2) / (rect.top() - rect.bottom()), 0, -((rect.top() + rect.bottom()) / (rect.top() - rect.bottom())),
-			0, 0, T(-2) / (z_far - z_near), -((z_far + z_near) / (z_far - z_near)),
-			0, 0, 0, 1
+			T(2) / (rect.right() - rect.left()), 0, 0, 0,
+			0, T(2) / (rect.top() - rect.bottom()), 0, 0,
+			0, 0, T(-2) / (z_far - z_near), 0,
+			-((rect.right() + rect.left()) / (rect.right() - rect.left())), -((rect.top() + rect.bottom()) / (rect.top() - rect.bottom())), -((z_far + z_near) / (z_far - z_near)), 1
 		);
 	}
 
@@ -883,7 +907,10 @@ namespace accel
 	template<std::size_t Rows, std::size_t Columns, typename T>
 	inline constexpr vector<Columns, T> matrix<Rows, Columns, T>::row(std::size_t index) const
 	{
-		return vector<Columns, T>(m_data[index]);
+		vector<Columns, T> row;
+		for (std::size_t i = 0; i < Columns; i++)
+			row[i] = m_data[index * Columns + i];
+		return row;
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
@@ -891,7 +918,7 @@ namespace accel
 	{
 		vector<Rows, T> column;
 		for (std::size_t i = 0; i < Rows; i++)
-			column[i] = m_data[i][index];
+			column[i] = m_data[index + (i * Rows)];
 		return column;
 	}
 
@@ -902,10 +929,86 @@ namespace accel
 		for (std::size_t row = 0; row < Rows; row++)
 		{
 			for (std::size_t column = 0; column < Columns; column++)
-				result.m_data[column][row] = m_data[row][column];
+				result.m_data[(column * Rows) + row] = m_data[(row * Columns) + column];
 		}
 		return result;
 	}
+
+	template<std::size_t Rows, std::size_t Columns, typename T>
+	constexpr T matrix<Rows, Columns, T>::determinant() const 
+	{
+  		static_assert(Rows == Columns, "Matrix must be square");
+
+  		T det = 0;
+  		if constexpr (Rows == 1) 
+		{
+    		det = m_data[0];
+  		} 
+		else if constexpr (Rows == 2) 
+		{
+    		det = m_data[0] * m_data[3] - m_data[1] * m_data[2];
+  		} 
+		else if constexpr (Rows == 3)
+		{
+    		det = m_data[0] * cofactor(0, 0).determinant() -
+          	m_data[1] * cofactor(0, 1).determinant() +
+          	m_data[2] * cofactor(0, 2).determinant();
+  		} 
+		else 
+		{
+    		// Use Laplace expansion along the first row
+    		for (std::size_t j = 0; j < Columns; j++)
+      			det += m_data[j] * cofactor(0, j).determinant() * ((j % 2 == 0) ? 1 : -1);
+		}
+
+  		return det;
+	}
+
+	template<std::size_t Rows, std::size_t Columns, typename T>
+	constexpr matrix<Rows - 1, Columns - 1, T> matrix<Rows, Columns, T>::cofactor(std::size_t row, std::size_t col) const 
+	{
+  		static_assert(Rows > 1 && Columns > 1, "Matrix must be at least 2x2");
+  		
+		matrix<Rows - 1, Columns - 1, T> c;
+  		std::size_t ci = 0;
+  		for (std::size_t i = 0; i < Rows; i++) 
+		{
+    		if (i == row) 
+				continue;
+    		std::size_t cj = 0;
+    		for (std::size_t j = 0; j < Columns; j++) 
+			{
+      			if (j == col) 
+					continue;
+      			c(ci, cj) = m_data[i * Columns + j];
+      			cj++;
+    		}
+	   		ci++;
+  		}
+  		return c;
+	}
+
+	template<std::size_t Rows, std::size_t Columns, typename T>
+	constexpr matrix<Columns, Rows, T> matrix<Rows, Columns, T>::inverse() const 
+	{
+        static_assert(Rows == Columns, "Matrix must be square");
+
+        // Compute the determinant
+        T det = determinant();
+        if (det == 0)
+            throw std::runtime_error("Matrix is not invertible");
+
+        // Compute the adjugate
+        matrix<Rows, Columns, T> adj;
+        for (std::size_t i = 0; i < Rows; i++) 
+		{
+            for (std::size_t j = 0; j < Columns; j++)
+                adj(j, i) = cofactor(i, j).determinant() * (((i+j) % 2 == 0) ? 1 : -1);
+        }
+
+        // Compute the inverse
+        return adj / det;
+    }
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
 	inline constexpr bool matrix<Rows, Columns, T>::operator==(const matrix<Rows, Columns, T>& other) const { return m_data == other.m_data; }
@@ -923,10 +1026,35 @@ namespace accel
 			for (std::size_t column = 0; column < N; column++)
 			{
 				for (std::size_t inner = 0; inner < Columns; inner++)
-					result(row, column) += m_data[row][inner] * other(inner, column);
+					result(row, column) += m_data[(row * Columns) + inner] * other(inner, column);
 			}
 		}
 		return result;
+	}
+
+	template<std::size_t Rows, std::size_t Columns, typename T>
+	constexpr vector<Rows, T> matrix<Rows, Columns, T>::operator*(const vector<Columns, T>& v) const
+	{
+		vector<Rows, T> result;
+
+        for (std::size_t i = 0; i < Rows; i++) 
+		{
+            T sum = 0;
+            for (std::size_t j = 0; j < Columns; j++)
+                sum += m_data[i + j * Rows] * v[j];
+            result[i] = sum;
+        }
+
+        return result;
+	}
+
+	template<std::size_t Rows, std::size_t Columns, typename T>
+	constexpr matrix<Rows, Columns, T> matrix<Rows, Columns, T>::operator/(T scalar) const 
+	{
+		matrix result;
+        for (std::size_t i = 0; i < Rows * Columns; i++)
+            result.m_data[i] = m_data[i] / scalar;
+        return result;
 	}
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
@@ -948,10 +1076,10 @@ namespace accel
 	inline constexpr T* matrix<Rows, Columns, T>::data() { return m_data.data(); }
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	inline constexpr T matrix<Rows, Columns, T>::operator()(std::size_t row, std::size_t column) const { return m_data[row][column]; }
+	inline constexpr T matrix<Rows, Columns, T>::operator()(std::size_t row, std::size_t column) const { return m_data[(row * Columns) + column]; }
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
-	inline constexpr T& matrix<Rows, Columns, T>::operator()(std::size_t row, std::size_t column) { return m_data[row][column]; }
+	inline constexpr T& matrix<Rows, Columns, T>::operator()(std::size_t row, std::size_t column) { return m_data[(row * Columns) + column]; }
 
 	template<std::size_t Rows, std::size_t Columns, typename T>
 	inline constexpr T matrix<Rows, Columns, T>::operator()(std::size_t index) const { return m_data[index]; }

@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-#include <accel/math.hpp>
+#include <accel/math>
 
 using namespace accel;
 
@@ -138,6 +138,13 @@ int main(int argc, char* argv[])
 			vector3f v(1.0f, 2.0f, 3.0f);
 			assert((v * m) == vector3f(14.0f, 32.0f, 50.0f));
 		}
+
+		{
+			matrix4f m = matrix4f::translate({-16.0f, -16.0f, 0.0f});
+			vector4f v(0.0f, 32.0f, 0.0f, 1.0f);
+			auto result = m * v;
+			assert(result == vector4f(-16.0f, 16.0f, 0.0f, 1.0f));
+		}
 	}
 
 
@@ -175,19 +182,11 @@ int main(int argc, char* argv[])
 		));
 
 		assert(matrix4f::translate(vector3f(2.0f, 3.0f, 4.0f)) == matrix4f(
-			1.0f, 0.0f, 0.0f, 2.0f,
-			0.0f, 1.0f, 0.0f, 3.0f,
-			0.0f, 0.0f, 1.0f, 4.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			2.0f, 3.0f, 4.0f, 1.0f
 		));
-
-		/*
-		auto proj = matrix4f::perspective(degreesf(90.0f), 16.0f / 9.0f, 1.0f, 100.0f);
-		auto view = matrix4f::lookat(point3f(0.0f, 0.0f, 15.0f), point3f(0.0f, 0.0f, 0.0f), vector3f(0.0f, 1.0f, 0.0f));
-		*/
-
-		auto proj = matrix4f::orthographic(rectanglef(0.0f, 0.0f, 600.0f, 800.0f), 0.1f, 100.0f);
-		std::cout << "Ortho: " << proj << "\n";
 	}
 
 	// Methods
@@ -208,8 +207,62 @@ int main(int argc, char* argv[])
 				2.0f, 5.0f, 8.0f,
 				3.0f, 6.0f, 9.0f
 			));
+			auto test = m.column(0);
 			assert(m.row(0) == vector3f(1.0f, 2.0f, 3.0f));
+			assert(m.row(1) == vector3f(4.0f, 5.0f, 6.0f));
+			assert(m.row(2) == vector3f(7.0f, 8.0f, 9.0f));
 			assert(m.column(0) == vector3f(1.0f, 4.0f, 7.0f));
+			assert(m.column(1) == vector3f(2.0f, 5.0f, 8.0f));
+			assert(m.column(2) == vector3f(3.0f, 6.0f, 9.0f));
+			assert(m.data() != nullptr);
+		}
+
+		{
+			auto m = matrix3f(
+				1.0f, 2.0f, 3.0f,
+				4.0f, 5.0f, 6.0f,
+				7.0f, 8.0f, 9.0f
+			);
+			auto c00 = matrix2f(
+				5.0f, 6.0f,
+				8.0f, 9.0f
+			);
+			auto c10 = matrix2f(
+				2.0f, 3.0f,
+				8.0f, 9.0f
+			);
+			auto c20 = matrix2f(
+				2.0f, 3.0f,
+				5.0f, 6.0f
+			);
+
+			assert(m.cofactor(0, 0) == c00);
+			assert(m.cofactor(1, 0) == c10);
+			assert(m.cofactor(2, 0) == c20);
+
+			assert(m.cofactor(0, 0).determinant() == -3.0f);
+			assert(m.cofactor(1, 0).determinant() == -6.0f);
+			assert(m.cofactor(2, 0).determinant() == -3.0f);
+		}
+
+		{
+			matrix3f m1(
+				1.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 1.0f
+			);
+			assert(m1.inverse() == m1);
+
+			matrix3f m2(
+				1.0f, 2.0f, 3.0f,
+				0.0f, 1.0f, 4.0f,
+				5.0f, 6.0f, 0.0f
+			);
+			assert(m2.inverse() == matrix3f(
+				-24.0f, 18.0f, 5.0f,
+				20.0f, -15.0f, -4.0f,
+				-5.0f, 4.0f, 1.0f
+			));
 		}
 	}
 

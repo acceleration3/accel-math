@@ -234,7 +234,7 @@ namespace accel
 
 	template<std::size_t Dimensions, typename T> class vector;
 
-	template<std::size_t Dimensions, typename T = float>
+	template<std::size_t Dimensions, typename T>
 	class point
 	{
 	public:
@@ -361,6 +361,22 @@ namespace accel
 
 		constexpr T height() const { return m_values[2] - m_values[0]; }
 		constexpr T width() const { return m_values[3] - m_values[1]; }
+		
+		void set_width(T width) { this->right() = this->left() + width; }
+		void set_height(T height) { this->bottom() = this->top() + height; }
+		
+		void set_x(T x) 
+		{ 
+			this->right() = x + this->width();
+			this->left() = x; 
+		}
+		
+		void set_y(T y) 
+		{ 
+			this->bottom() = y + this->height();
+			this->top() = y; 
+		}
+
 		constexpr size<2, T> size() const { return accel::size<2, T>(width(), height()); }
 
 		constexpr point<2, T> top_left() const { return accel::point<2, T>(m_values[1], m_values[0]); }

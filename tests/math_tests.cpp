@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-#include <accel/math.h>
+#include <accel/math>
 
 using namespace accel;
 
